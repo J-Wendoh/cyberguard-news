@@ -16,7 +16,7 @@ A fully responsive cybersecurity news dashboard featuring real-time global threa
 - **Frontend**: React + TypeScript
 - **Build Tool**: Vite
 - **Styling**: Tailwind CSS
-- **Database**: Supabase
+- **Data Source**: N8N Workflow Automation
 - **Deployment**: Vercel
 
 ## Getting Started
@@ -37,8 +37,31 @@ npm install
 Create a `.env` file in the `Dashboard` directory:
 
 ```env
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+VITE_N8N_WEBHOOK_URL=https://your-n8n-instance.com/webhook/your-webhook-id
+```
+
+**Getting your N8N Webhook URL:**
+1. In your n8n workflow, add a **Webhook** trigger node
+2. Set the HTTP Method to `GET`
+3. Copy the **Production URL**
+4. Paste it as the value for `VITE_N8N_WEBHOOK_URL`
+
+**Expected Data Format from N8N:**
+Your n8n workflow should return an array of news articles with this structure:
+```json
+[
+  {
+    "id": "unique-id",
+    "title": "Article title",
+    "category": "Malware | Phishing | General Security",
+    "source": "Source name",
+    "link": "https://article-url.com",
+    "image_url": "https://image-url.com/image.jpg",
+    "description": "Article description",
+    "region": "Global | Kenya | Uganda | South Africa | Nigeria",
+    "published_at": "2024-01-01T00:00:00Z"
+  }
+]
 ```
 
 ### Development
@@ -78,17 +101,15 @@ vercel
 3. Click "New Project"
 4. Import your repository
 5. Vercel will automatically detect the `vercel.json` configuration
-6. Add your environment variables in the Vercel dashboard:
-   - `VITE_SUPABASE_URL`
-   - `VITE_SUPABASE_ANON_KEY`
+6. Add your environment variable in the Vercel dashboard:
+   - `VITE_N8N_WEBHOOK_URL`: Your n8n workflow webhook URL
 7. Click "Deploy"
 
 ### Environment Variables on Vercel
 
-Make sure to add these environment variables in your Vercel project settings:
+Make sure to add this environment variable in your Vercel project settings:
 
-- `VITE_SUPABASE_URL`: Your Supabase project URL
-- `VITE_SUPABASE_ANON_KEY`: Your Supabase anonymous key
+- `VITE_N8N_WEBHOOK_URL`: Your n8n workflow webhook URL
 
 ## Project Structure
 

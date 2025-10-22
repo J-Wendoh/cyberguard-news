@@ -4,7 +4,7 @@ import { SearchFilters } from './components/SearchFilters';
 import { NewsCard } from './components/NewsCard';
 import { RegionalModal } from './components/RegionalModal';
 import { NewsDetailModal } from './components/NewsDetailModal';
-import { supabase, type NewsArticle } from './lib/supabase';
+import { fetchNewsFromN8n, type NewsArticle } from './lib/supabase';
 
 function App() {
   const [articles, setArticles] = useState<NewsArticle[]>([]);
@@ -20,14 +20,17 @@ function App() {
 
   async function fetchArticles() {
     try {
-      const { data, error } = await supabase
-        .from('news_articles')
-        .select('*')
-        .eq('region', 'Global')
-        .order('published_at', { ascending: false });
+      const data = await fetchNewsFromN8n();
 
-      if (error) throw error;
-      setArticles(data || []);
+      // Filter for Global region if needed
+      const globalArticles = data.filter(article => article.region === 'Global');
+
+      // Sort by published_at date (most recent first)
+      const sortedArticles = globalArticles.sort((a, b) =>
+        new Date(b.published_at).getTime() - new Date(a.published_at).getTime()
+      );
+
+      setArticles(sortedArticles);
     } catch (error) {
       console.error('Error fetching articles:', error);
     } finally {
