@@ -11,6 +11,8 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
   const [isRegionalModalOpen, setIsRegionalModalOpen] = useState(false);
   const [selectedArticle, setSelectedArticle] = useState<NewsArticle | null>(null);
 
@@ -47,9 +49,13 @@ function App() {
       const matchesCategory =
         selectedCategory === 'All' || article.category === selectedCategory;
 
-      return matchesSearch && matchesCategory;
+      const articleDate = new Date(article.published_at);
+      const matchesDateFrom = !dateFrom || articleDate >= new Date(dateFrom);
+      const matchesDateTo = !dateTo || articleDate <= new Date(dateTo + 'T23:59:59');
+
+      return matchesSearch && matchesCategory && matchesDateFrom && matchesDateTo;
     });
-  }, [articles, searchQuery, selectedCategory]);
+  }, [articles, searchQuery, selectedCategory, dateFrom, dateTo]);
 
   const latestArticle = filteredArticles[0];
   const previousArticles = filteredArticles.slice(1);
@@ -86,6 +92,10 @@ function App() {
           onSearchChange={setSearchQuery}
           selectedCategory={selectedCategory}
           onCategoryChange={setSelectedCategory}
+          dateFrom={dateFrom}
+          dateTo={dateTo}
+          onDateFromChange={setDateFrom}
+          onDateToChange={setDateTo}
         />
 
         <main className="max-w-7xl mx-auto px-4 sm:px-6 pb-8 sm:pb-12">
