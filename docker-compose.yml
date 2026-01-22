@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: ./Resilio_api
+      dockerfile: Dockerfile
+    container_name: cybersec-api
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DB_HOST=${DB_HOST:-167.114.2.60}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_NAME=${DB_NAME:-n8n}
+      - DB_USER=${DB_USER:-n8n}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost,http://localhost:80}
+    restart: unless-stopped
+    networks:
+      - cybersec-network
+
+  dashboard:
+    build:
+      context: ./Dashboard
+      dockerfile: Dockerfile
+    container_name: cybersec-dashboard
+    ports:
+      - "80:80"
+    depends_on:
+      - api
+    restart: unless-stopped
+    networks:
+      - cybersec-network
+
+networks:
+  cybersec-network:
+    driver: bridge
