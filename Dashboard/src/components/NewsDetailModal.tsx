@@ -1,5 +1,5 @@
 import { X, ExternalLink } from 'lucide-react';
-import type { NewsArticle } from '../lib/supabase';
+import type { NewsArticle } from '../lib/api';
 
 interface NewsDetailModalProps {
   article: NewsArticle | null;
@@ -10,14 +10,24 @@ interface NewsDetailModalProps {
 const categoryIcons: Record<string, string> = {
   Malware: '🦠',
   Phishing: '🎣',
+  Ransomware: '🔒',
+  'Data Breach': '💾',
+  Vulnerability: '🐛',
   'General Security': '🛡️',
+};
+
+const priorityStyles: Record<string, { bg: string; text: string }> = {
+  High: { bg: 'bg-red-500/20', text: 'text-red-400' },
+  Medium: { bg: 'bg-yellow-500/20', text: 'text-yellow-400' },
+  Low: { bg: 'bg-green-500/20', text: 'text-green-400' },
 };
 
 export function NewsDetailModal({ article, isOpen, onClose }: NewsDetailModalProps) {
   if (!isOpen || !article) return null;
 
   const categoryIcon = categoryIcons[article.category] || '🛡️';
-  const formattedDate = new Date(article.published_at).toLocaleString('en-US', {
+  const priority = priorityStyles[article.priority] || priorityStyles.Medium;
+  const formattedDate = new Date(article.published_date || article.created_at).toLocaleString('en-US', {
     month: 'long',
     day: 'numeric',
     year: 'numeric',
@@ -40,21 +50,25 @@ export function NewsDetailModal({ article, isOpen, onClose }: NewsDetailModalPro
           <X className="w-5 sm:w-6 h-5 sm:h-6 text-white" />
         </button>
 
-        {article.image_url && (
-          <div className="w-full h-48 sm:h-64 rounded-t-2xl overflow-hidden">
-            <img
-              src={article.image_url}
-              alt={article.title}
-              className="w-full h-full object-cover"
-            />
-          </div>
-        )}
+        <div className="w-full h-48 sm:h-64 rounded-t-2xl overflow-hidden bg-[#0A1F3D]">
+          <img
+            src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=800&h=400&fit=crop&q=80"
+            alt={article.title}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              e.currentTarget.src = 'https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=800&h=400&fit=crop&q=80';
+            }}
+          />
+        </div>
 
         <div className="p-5 sm:p-8 space-y-4 sm:space-y-6">
-          <div className="flex items-center gap-2 sm:gap-3 pr-8">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 pr-8">
             <span className="text-2xl sm:text-3xl">{categoryIcon}</span>
             <span className="px-3 sm:px-4 py-1 bg-[#00C2FF]/20 text-[#00C2FF] rounded-xl text-xs sm:text-sm font-medium">
               {article.category}
+            </span>
+            <span className={`px-3 sm:px-4 py-1 ${priority.bg} ${priority.text} rounded-xl text-xs sm:text-sm font-bold`}>
+              {article.priority} Priority
             </span>
           </div>
 
@@ -68,14 +82,22 @@ export function NewsDetailModal({ article, isOpen, onClose }: NewsDetailModalPro
             <span>{formattedDate}</span>
           </div>
 
+          {article.summary && (
+            <div className="pt-3 sm:pt-4 border-t border-[#00C2FF]/20">
+              <h4 className="text-sm font-semibold text-[#00C2FF] mb-2">Summary</h4>
+              <p className="text-sm sm:text-base text-gray-300 leading-relaxed">{article.summary}</p>
+            </div>
+          )}
+
           {article.description && (
             <div className="pt-3 sm:pt-4 border-t border-[#00C2FF]/20">
+              <h4 className="text-sm font-semibold text-[#00C2FF] mb-2">Description</h4>
               <p className="text-sm sm:text-base text-gray-300 leading-relaxed">{article.description}</p>
             </div>
           )}
 
           <a
-            href={article.link}
+            href={article.url}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 bg-[#00C2FF] hover:bg-[#00C2FF]/80 text-[#0A1E3F] text-sm sm:text-base font-semibold rounded-2xl transition-all duration-300 shadow-lg shadow-[#00C2FF]/30 hover:shadow-xl hover:shadow-[#00C2FF]/40"

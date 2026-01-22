@@ -1,23 +1,42 @@
 import { Search, Calendar } from 'lucide-react';
+import type { FilterOption } from '../lib/api';
 
 interface SearchFiltersProps {
   searchQuery: string;
   onSearchChange: (query: string) => void;
   selectedCategory: string;
   onCategoryChange: (category: string) => void;
+  selectedPriority: string;
+  onPriorityChange: (priority: string) => void;
+  categories: FilterOption[];
+  priorities: FilterOption[];
   dateFrom: string;
   dateTo: string;
   onDateFromChange: (date: string) => void;
   onDateToChange: (date: string) => void;
 }
 
-const categories = ['All', 'Malware', 'Phishing', 'General Security'];
+const priorityColors: Record<string, string> = {
+  High: 'bg-red-500/20 text-red-400 border-red-500/30 hover:bg-red-500/30',
+  Medium: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30 hover:bg-yellow-500/30',
+  Low: 'bg-green-500/20 text-green-400 border-green-500/30 hover:bg-green-500/30',
+};
+
+const priorityActiveColors: Record<string, string> = {
+  High: 'bg-red-500 text-white shadow-lg shadow-red-500/40',
+  Medium: 'bg-yellow-500 text-black shadow-lg shadow-yellow-500/40',
+  Low: 'bg-green-500 text-white shadow-lg shadow-green-500/40',
+};
 
 export function SearchFilters({
   searchQuery,
   onSearchChange,
   selectedCategory,
   onCategoryChange,
+  selectedPriority,
+  onPriorityChange,
+  categories,
+  priorities,
   dateFrom,
   dateTo,
   onDateFromChange,
@@ -61,20 +80,64 @@ export function SearchFilters({
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-2 sm:gap-3">
-        {categories.map((category) => (
+      {/* Priority Filter */}
+      <div className="space-y-2">
+        <span className="text-xs text-gray-400 uppercase tracking-wide font-medium">Priority</span>
+        <div className="flex flex-wrap gap-2 sm:gap-3">
           <button
-            key={category}
-            onClick={() => onCategoryChange(category)}
+            onClick={() => onPriorityChange('All')}
             className={`px-4 sm:px-6 py-1.5 sm:py-2 rounded-2xl text-sm sm:text-base font-medium transition-all duration-300 ${
-              selectedCategory === category
+              selectedPriority === 'All'
                 ? 'bg-[#00C2FF] text-[#0A1E3F] shadow-lg shadow-[#00C2FF]/40'
                 : 'bg-[#1B3B6F]/40 text-white border border-[#00C2FF]/30 hover:bg-[#1B3B6F]/60 hover:border-[#00C2FF]/50'
             }`}
           >
-            {category}
+            All
           </button>
-        ))}
+          {priorities.map((p) => (
+            <button
+              key={p.priority}
+              onClick={() => onPriorityChange(p.priority || '')}
+              className={`px-4 sm:px-6 py-1.5 sm:py-2 rounded-2xl text-sm sm:text-base font-medium transition-all duration-300 border ${
+                selectedPriority === p.priority
+                  ? priorityActiveColors[p.priority || ''] || 'bg-[#00C2FF] text-[#0A1E3F]'
+                  : priorityColors[p.priority || ''] || 'bg-[#1B3B6F]/40 text-white border-[#00C2FF]/30'
+              }`}
+            >
+              {p.priority} ({p.count})
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Category Filter */}
+      <div className="space-y-2">
+        <span className="text-xs text-gray-400 uppercase tracking-wide font-medium">Category</span>
+        <div className="flex flex-wrap gap-2 sm:gap-3">
+          <button
+            onClick={() => onCategoryChange('All')}
+            className={`px-4 sm:px-6 py-1.5 sm:py-2 rounded-2xl text-sm sm:text-base font-medium transition-all duration-300 ${
+              selectedCategory === 'All'
+                ? 'bg-[#00C2FF] text-[#0A1E3F] shadow-lg shadow-[#00C2FF]/40'
+                : 'bg-[#1B3B6F]/40 text-white border border-[#00C2FF]/30 hover:bg-[#1B3B6F]/60 hover:border-[#00C2FF]/50'
+            }`}
+          >
+            All
+          </button>
+          {categories.map((cat) => (
+            <button
+              key={cat.category}
+              onClick={() => onCategoryChange(cat.category || '')}
+              className={`px-4 sm:px-6 py-1.5 sm:py-2 rounded-2xl text-sm sm:text-base font-medium transition-all duration-300 ${
+                selectedCategory === cat.category
+                  ? 'bg-[#00C2FF] text-[#0A1E3F] shadow-lg shadow-[#00C2FF]/40'
+                  : 'bg-[#1B3B6F]/40 text-white border border-[#00C2FF]/30 hover:bg-[#1B3B6F]/60 hover:border-[#00C2FF]/50'
+              }`}
+            >
+              {cat.category} ({cat.count})
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );

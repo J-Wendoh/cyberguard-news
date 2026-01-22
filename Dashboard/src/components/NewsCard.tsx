@@ -1,5 +1,5 @@
 import { ExternalLink } from 'lucide-react';
-import type { NewsArticle } from '../lib/supabase';
+import type { NewsArticle } from '../lib/api';
 
 interface NewsCardProps {
   article: NewsArticle;
@@ -10,17 +10,25 @@ interface NewsCardProps {
 const categoryIcons: Record<string, string> = {
   Malware: '🦠',
   Phishing: '🎣',
+  Ransomware: '🔒',
+  'Data Breach': '💾',
+  Vulnerability: '🐛',
   'General Security': '🛡️',
 };
 
+const priorityStyles: Record<string, { bg: string; text: string; border: string }> = {
+  High: { bg: 'bg-red-500/20', text: 'text-red-400', border: 'border-red-500/50' },
+  Medium: { bg: 'bg-yellow-500/20', text: 'text-yellow-400', border: 'border-yellow-500/50' },
+  Low: { bg: 'bg-green-500/20', text: 'text-green-400', border: 'border-green-500/50' },
+};
+
 const getPlaceholderImage = (category: string): string => {
-  const seed = encodeURIComponent(category);
   return `https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=800&h=400&fit=crop&q=80`;
 };
 
 export function NewsCard({ article, isLatest = false, onClick }: NewsCardProps) {
   const categoryIcon = categoryIcons[article.category] || '🛡️';
-  const formattedDate = new Date(article.published_at).toLocaleString('en-US', {
+  const formattedDate = new Date(article.published_date || article.created_at).toLocaleString('en-US', {
     month: '2-digit',
     day: '2-digit',
     year: 'numeric',
@@ -29,7 +37,8 @@ export function NewsCard({ article, isLatest = false, onClick }: NewsCardProps) 
     second: '2-digit',
   });
 
-  const imageUrl = article.image_url || getPlaceholderImage(article.category);
+  const priority = priorityStyles[article.priority] || priorityStyles.Medium;
+  const imageUrl = getPlaceholderImage(article.category);
 
   return (
     <div
@@ -38,7 +47,7 @@ export function NewsCard({ article, isLatest = false, onClick }: NewsCardProps) 
         isLatest ? 'ring-2 ring-[#00C2FF]/50 shadow-lg shadow-[#00C2FF]/30' : ''
       }`}
     >
-      <div className="w-full h-48 overflow-hidden bg-[#0A1F3D]">
+      <div className="w-full h-48 overflow-hidden bg-[#0A1F3D] relative">
         <img
           src={imageUrl}
           alt={article.title}
@@ -47,6 +56,10 @@ export function NewsCard({ article, isLatest = false, onClick }: NewsCardProps) 
             e.currentTarget.src = 'https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=800&h=400&fit=crop&q=80';
           }}
         />
+        {/* Priority Badge */}
+        <div className={`absolute top-3 right-3 px-2.5 py-1 rounded-lg text-xs font-bold ${priority.bg} ${priority.text} border ${priority.border}`}>
+          {article.priority}
+        </div>
       </div>
 
       <div className="p-4 sm:p-5">
@@ -71,6 +84,12 @@ export function NewsCard({ article, isLatest = false, onClick }: NewsCardProps) 
             <span className="text-lg sm:text-xl">{categoryIcon}</span>
             <span className="text-[#00C2FF] font-medium">{article.category}</span>
           </div>
+
+          {article.summary && (
+            <p className="text-gray-400 text-xs sm:text-sm line-clamp-2">
+              {article.summary}
+            </p>
+          )}
 
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-0 text-xs sm:text-sm text-gray-400">
             <span className="font-medium truncate">{article.source}</span>
