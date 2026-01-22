@@ -81,8 +81,8 @@ async function getArticles(options = {}) {
   if (search) {
     conditions.push(`(
       title ILIKE $${paramIndex} OR
-      COALESCE(summary, '') ILIKE $${paramIndex} OR
-      COALESCE(description, '') ILIKE $${paramIndex}
+      COALESCE(description, '') ILIKE $${paramIndex} OR
+      COALESCE(source, '') ILIKE $${paramIndex}
     )`);
     params.push(`%${search}%`);
     paramIndex++;
