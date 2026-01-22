@@ -7,15 +7,15 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/
 
 export interface NewsArticle {
   id: number;
+  newsletter_id?: number;
   title: string;
   source: string;
   category: string;
   priority: 'High' | 'Medium' | 'Low';
-  summary: string | null;
   description: string | null;
-  url: string;
-  published_date: string;
-  created_at: string;
+  link: string;
+  published: string;
+  article_id?: string;
 }
 
 export interface PaginationInfo {

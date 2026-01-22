@@ -1,9 +1,11 @@
-import { ExternalLink } from 'lucide-react';
+import { ExternalLink, Heart } from 'lucide-react';
 import type { NewsArticle } from '../lib/api';
 
 interface NewsCardProps {
   article: NewsArticle;
   isLatest?: boolean;
+  isFavorite?: boolean;
+  onToggleFavorite?: (id: number) => void;
   onClick: () => void;
 }
 
@@ -13,32 +15,30 @@ const categoryIcons: Record<string, string> = {
   Ransomware: '🔒',
   'Data Breach': '💾',
   Vulnerability: '🐛',
+  'Critical Vulnerability': '⚠️',
   'General Security': '🛡️',
 };
 
-const priorityStyles: Record<string, { bg: string; text: string; border: string }> = {
-  High: { bg: 'bg-red-500/20', text: 'text-red-400', border: 'border-red-500/50' },
-  Medium: { bg: 'bg-yellow-500/20', text: 'text-yellow-400', border: 'border-yellow-500/50' },
-  Low: { bg: 'bg-green-500/20', text: 'text-green-400', border: 'border-green-500/50' },
-};
-
-const getPlaceholderImage = (category: string): string => {
+const getPlaceholderImage = (): string => {
   return `https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=800&h=400&fit=crop&q=80`;
 };
 
-export function NewsCard({ article, isLatest = false, onClick }: NewsCardProps) {
+export function NewsCard({ article, isLatest = false, isFavorite = false, onToggleFavorite, onClick }: NewsCardProps) {
   const categoryIcon = categoryIcons[article.category] || '🛡️';
-  const formattedDate = new Date(article.published_date || article.created_at).toLocaleString('en-US', {
+  const formattedDate = new Date(article.published).toLocaleString('en-US', {
     month: '2-digit',
     day: '2-digit',
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-    second: '2-digit',
   });
 
-  const priority = priorityStyles[article.priority] || priorityStyles.Medium;
-  const imageUrl = getPlaceholderImage(article.category);
+  const imageUrl = getPlaceholderImage();
+
+  const handleFavoriteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onToggleFavorite?.(article.id);
+  };
 
   return (
     <div
@@ -56,10 +56,17 @@ export function NewsCard({ article, isLatest = false, onClick }: NewsCardProps) 
             e.currentTarget.src = 'https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=800&h=400&fit=crop&q=80';
           }}
         />
-        {/* Priority Badge */}
-        <div className={`absolute top-3 right-3 px-2.5 py-1 rounded-lg text-xs font-bold ${priority.bg} ${priority.text} border ${priority.border}`}>
-          {article.priority}
-        </div>
+        {/* Favorite Button */}
+        <button
+          onClick={handleFavoriteClick}
+          className={`absolute top-3 right-3 p-2 rounded-full transition-all duration-300 ${
+            isFavorite
+              ? 'bg-red-500 text-white shadow-lg shadow-red-500/40'
+              : 'bg-black/40 text-white/70 hover:bg-black/60 hover:text-red-400'
+          }`}
+        >
+          <Heart className={`w-5 h-5 ${isFavorite ? 'fill-current' : ''}`} />
+        </button>
       </div>
 
       <div className="p-4 sm:p-5">
@@ -85,9 +92,9 @@ export function NewsCard({ article, isLatest = false, onClick }: NewsCardProps) 
             <span className="text-[#00C2FF] font-medium">{article.category}</span>
           </div>
 
-          {article.summary && (
+          {article.description && (
             <p className="text-gray-400 text-xs sm:text-sm line-clamp-2">
-              {article.summary}
+              {article.description}
             </p>
           )}
 

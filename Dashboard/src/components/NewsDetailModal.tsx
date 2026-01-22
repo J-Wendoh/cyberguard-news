@@ -27,7 +27,7 @@ export function NewsDetailModal({ article, isOpen, onClose }: NewsDetailModalPro
 
   const categoryIcon = categoryIcons[article.category] || '🛡️';
   const priority = priorityStyles[article.priority] || priorityStyles.Medium;
-  const formattedDate = new Date(article.published_date || article.created_at).toLocaleString('en-US', {
+  const formattedDate = new Date(article.published).toLocaleString('en-US', {
     month: 'long',
     day: 'numeric',
     year: 'numeric',
@@ -82,22 +82,14 @@ export function NewsDetailModal({ article, isOpen, onClose }: NewsDetailModalPro
             <span>{formattedDate}</span>
           </div>
 
-          {article.summary && (
-            <div className="pt-3 sm:pt-4 border-t border-[#00C2FF]/20">
-              <h4 className="text-sm font-semibold text-[#00C2FF] mb-2">Summary</h4>
-              <p className="text-sm sm:text-base text-gray-300 leading-relaxed">{article.summary}</p>
-            </div>
-          )}
-
           {article.description && (
             <div className="pt-3 sm:pt-4 border-t border-[#00C2FF]/20">
-              <h4 className="text-sm font-semibold text-[#00C2FF] mb-2">Description</h4>
               <p className="text-sm sm:text-base text-gray-300 leading-relaxed">{article.description}</p>
             </div>
           )}
 
           <a
-            href={article.url}
+            href={article.link}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-5 sm:px-6 py-2.5 sm:py-3 bg-[#00C2FF] hover:bg-[#00C2FF]/80 text-[#0A1E3F] text-sm sm:text-base font-semibold rounded-2xl transition-all duration-300 shadow-lg shadow-[#00C2FF]/30 hover:shadow-xl hover:shadow-[#00C2FF]/40"

@@ -1,9 +1,11 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { Heart } from 'lucide-react';
 import { Header } from './components/Header';
 import { SearchFilters } from './components/SearchFilters';
 import { NewsCard } from './components/NewsCard';
 import { RegionalModal } from './components/RegionalModal';
 import { NewsDetailModal } from './components/NewsDetailModal';
+import { useFavorites } from './hooks/useFavorites';
 import {
   fetchArticles,
   fetchAllFilters,
@@ -13,18 +15,20 @@ import {
 
 function App() {
   const [articles, setArticles] = useState<NewsArticle[]>([]);
+  const [allArticles, setAllArticles] = useState<NewsArticle[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const [selectedPriority, setSelectedPriority] = useState('All');
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
+  const [selectedDate, setSelectedDate] = useState('');
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [isRegionalModalOpen, setIsRegionalModalOpen] = useState(false);
   const [selectedArticle, setSelectedArticle] = useState<NewsArticle | null>(null);
 
+  // Favorites
+  const { favorites, toggleFavorite, isFavorite } = useFavorites();
+
   // Filter options from API
   const [categories, setCategories] = useState<FilterOption[]>([]);
-  const [priorities, setPriorities] = useState<FilterOption[]>([]);
 
   // Pagination
   const [page, setPage] = useState(1);
@@ -34,65 +38,80 @@ function App() {
   const loadFilters = useCallback(async () => {
     const filters = await fetchAllFilters();
     setCategories(filters.categories);
-    setPriorities(filters.priorities);
   }, []);
 
-  const loadArticles = useCallback(async () => {
-    setLoading(true);
-    try {
-      const params: Record<string, string | number> = {
-        page,
-        limit: 50,
-        sort_by: 'created_at',
-        sort_order: 'DESC',
-      };
+  // Load articles from API
+  useEffect(() => {
+    const loadArticles = async () => {
+      setLoading(true);
+      try {
+        const params: Record<string, string | number> = {
+          page,
+          limit: 50,
+        };
 
-      // Apply server-side filters
-      if (selectedCategory !== 'All') {
-        params.category = selectedCategory;
-      }
-      if (selectedPriority !== 'All') {
-        params.priority = selectedPriority;
-      }
-      if (searchQuery) {
-        params.search = searchQuery;
-      }
-      if (dateFrom) {
-        params.start_date = dateFrom;
-      }
-      if (dateTo) {
-        params.end_date = dateTo;
-      }
+        // Apply server-side filters
+        if (selectedCategory && selectedCategory !== 'All') {
+          params.category = selectedCategory;
+        }
+        if (searchQuery) {
+          params.search = searchQuery;
+        }
 
-      const result = await fetchArticles(params);
+        const result = await fetchArticles(params);
 
-      if (result.success) {
-        setArticles(result.data);
-        setTotalPages(result.pagination.totalPages);
-        setHasNextPage(result.pagination.hasNextPage);
-      } else {
-        setArticles([]);
+        if (result.success) {
+          setAllArticles(result.data);
+          setTotalPages(result.pagination.totalPages);
+          setHasNextPage(result.pagination.hasNextPage);
+        } else {
+          setAllArticles([]);
+        }
+      } catch (error) {
+        console.error('Error fetching articles:', error);
+        setAllArticles([]);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error('Error fetching articles:', error);
-      setArticles([]);
-    } finally {
-      setLoading(false);
+    };
+
+    loadArticles();
+  }, [page, selectedCategory, searchQuery]);
+
+  // Client-side filtering (date + favorites)
+  useEffect(() => {
+    let filtered = allArticles;
+
+    // Filter by date
+    if (selectedDate) {
+      filtered = filtered.filter((article) => {
+        const articleDate = new Date(article.published).toISOString().split('T')[0];
+        return articleDate === selectedDate;
+      });
     }
-  }, [page, selectedCategory, selectedPriority, searchQuery, dateFrom, dateTo]);
+
+    // Filter by favorites
+    if (showFavoritesOnly) {
+      filtered = filtered.filter((article) => favorites.includes(article.id));
+    }
+
+    setArticles(filtered);
+  }, [allArticles, selectedDate, showFavoritesOnly, favorites]);
 
   useEffect(() => {
     loadFilters();
   }, [loadFilters]);
 
-  useEffect(() => {
-    // Reset to page 1 when filters change
+  // Reset to page 1 when filters change
+  const handleCategoryChange = (category: string) => {
+    setSelectedCategory(category);
     setPage(1);
-  }, [selectedCategory, selectedPriority, searchQuery, dateFrom, dateTo]);
+  };
 
-  useEffect(() => {
-    loadArticles();
-  }, [loadArticles]);
+  const handleSearchChange = (query: string) => {
+    setSearchQuery(query);
+    setPage(1);
+  };
 
   const latestArticle = articles[0];
   const previousArticles = articles.slice(1);
@@ -100,7 +119,7 @@ function App() {
   const groupedArticles = useMemo(() => {
     const groups: Record<string, NewsArticle[]> = {};
     previousArticles.forEach((article) => {
-      const date = new Date(article.published_date || article.created_at).toLocaleDateString('en-US', {
+      const date = new Date(article.published).toLocaleDateString('en-US', {
         month: 'long',
         day: 'numeric',
         year: 'numeric',
@@ -126,18 +145,28 @@ function App() {
 
         <SearchFilters
           searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
+          onSearchChange={handleSearchChange}
           selectedCategory={selectedCategory}
-          onCategoryChange={setSelectedCategory}
-          selectedPriority={selectedPriority}
-          onPriorityChange={setSelectedPriority}
+          onCategoryChange={handleCategoryChange}
           categories={categories}
-          priorities={priorities}
-          dateFrom={dateFrom}
-          dateTo={dateTo}
-          onDateFromChange={setDateFrom}
-          onDateToChange={setDateTo}
+          selectedDate={selectedDate}
+          onDateChange={setSelectedDate}
         />
+
+        {/* Favorites Toggle */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-4">
+          <button
+            onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+            className={`inline-flex items-center gap-2 px-4 py-2 rounded-2xl text-sm font-medium transition-all duration-300 ${
+              showFavoritesOnly
+                ? 'bg-red-500 text-white shadow-lg shadow-red-500/40'
+                : 'bg-[#1B3B6F]/40 text-white border border-[#00C2FF]/30 hover:bg-[#1B3B6F]/60'
+            }`}
+          >
+            <Heart className={`w-4 h-4 ${showFavoritesOnly ? 'fill-current' : ''}`} />
+            {showFavoritesOnly ? `Showing Favorites (${favorites.length})` : `Show Favorites (${favorites.length})`}
+          </button>
+        </div>
 
         <main className="max-w-7xl mx-auto px-4 sm:px-6 pb-8 sm:pb-12">
           {loading ? (
@@ -146,7 +175,9 @@ function App() {
             </div>
           ) : articles.length === 0 ? (
             <div className="text-center py-20">
-              <p className="text-gray-400 text-lg">No articles found</p>
+              <p className="text-gray-400 text-lg">
+                {showFavoritesOnly ? 'No favorite articles yet. Click the heart icon on articles to save them!' : 'No articles found'}
+              </p>
             </div>
           ) : (
             <div className="space-y-12">
@@ -155,6 +186,8 @@ function App() {
                   <NewsCard
                     article={latestArticle}
                     isLatest
+                    isFavorite={isFavorite(latestArticle.id)}
+                    onToggleFavorite={toggleFavorite}
                     onClick={() => setSelectedArticle(latestArticle)}
                   />
                 </div>
@@ -178,6 +211,8 @@ function App() {
                       <NewsCard
                         key={article.id}
                         article={article}
+                        isFavorite={isFavorite(article.id)}
+                        onToggleFavorite={toggleFavorite}
                         onClick={() => setSelectedArticle(article)}
                       />
                     ))}
@@ -186,7 +221,7 @@ function App() {
               ))}
 
               {/* Pagination */}
-              {totalPages > 1 && (
+              {totalPages > 1 && !showFavoritesOnly && (
                 <div className="flex justify-center items-center gap-4 pt-8">
                   <button
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
